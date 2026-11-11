@@ -27,7 +27,7 @@ the plugin holds the modifier back for a moment:
 
 - a number 1-4 follows while it's held: **chord**, and neither key reaches the game.
 - it's released first: **tap**. The game gets the press one frame later (sneak toggles on release).
-- it's held for 150 ms (`HoldMs`): the game gets the press then, so a held run or sprint starts 150 ms later.
+- it's held for 150 ms (adjustable in the MCM): the game gets the press then, so a held run or sprint starts 150 ms later.
 - any other key or mouse button is pressed first, movement keys included: the game gets the modifier right away, so
   Shift+W starts running with no delay.
 - a number pressed after the game already got the modifier is still a chord.
@@ -39,9 +39,9 @@ This only happens in gameplay and in the Favorites menu. Everywhere else, keys p
 The bar needs [SKSE Menu Framework 3](https://www.nexusmods.com/skyrimspecialedition/mods/120352). Without it, the chords
 still work and there is simply no bar.
 
-- **Rows:** keys 1-4 (the vanilla hotkeys) at the bottom, then the Ctrl, Shift and Alt chord rows. The row of the modifier
+- **Rows:** keys 1-4 (the vanilla hotkeys) first, then the Ctrl, Shift and Alt chord rows. The row of the modifier
   you're holding lights up and the others dim. Modifier rows with nothing assigned stay hidden unless you hold that
-  modifier. Or use a single row that switches to the held modifier (`Layout=1`).
+  modifier. Or show a single row that switches to the held modifier (in the F1 settings).
 - **Icons** by kind, tinted: spells by school and element (fire, frost, shock, healing, ward, light, illusion,
   conjuration, bound weapons), powers, shouts, scrolls, potions by what they restore, poisons, food, weapons by type,
   shields, armour, torches, ingredients, soul gems, books and ammo.
@@ -49,11 +49,8 @@ still work and there is simply no bar.
   magicka than you have; the shout cooldown counting down; a gold frame on what's equipped.
 - **When it shows:** in gameplay and in the Favorites menu. Hidden in other menus, in dialogue, while an SKSE Menu Framework
   window is open, and when the HUD is hidden. It can also show only with weapons drawn or in combat.
-- **Settings in game:** press **F1** (SKSE Menu Framework) > **Spell Chords** > **Spell Bar**. Position, size, spacing,
-  opacity, dimming, layout, when to show, names under icons and empty slots apply live; "Save to SpellChords.ini" keeps them.
-
-The bar is centred above the bottom HUD by default. For the bottom-left corner instead, set `Anchor=0`, `PosX=0.015` and
-`PosY=0.97`.
+- **Position:** bottom left by default. Pick another in the MCM (see Settings): bottom center, bottom right, top left, top
+  center or top right. At the top, the 1-4 row stays at the top edge and the chord rows open below it.
 
 ## Requirements
 
@@ -66,29 +63,35 @@ The bar is centred above the bottom HUD by default. For the bottom-left corner i
 
 ## Installation
 
-Install the archive with your mod manager (Mod Organizer 2, Vortex), or copy its `SKSE` folder into your game's `Data`
-folder.
+Install the archive with your mod manager (Mod Organizer 2, Vortex), or copy its contents into your game's `Data` folder.
+Then enable `SpellChords.esp`; it only holds the MCM.
 
 ## Settings
 
-All settings are in `Data/SKSE/Plugins/SpellChords.ini`, with comments:
+**MCM** (System menu > Mod Configuration > **Spell Chords**):
 
-- `[General]` `Enabled` (1): chords on or off. `HoldMs` (150): how long a modifier waits for a number before the game gets
-  it. `Notify` (1): a notice when a slot is assigned or cleared.
-- `[Keys]` `Modifier1-3` (29, 42, 56 = left Ctrl, Shift, Alt) and `Number1-4` (2-5 = keys 1-4): DirectInput scan codes,
-  if you want other keys.
-- `[Bar]`: the spell bar settings, the same as in the F1 page.
-- `[Debug]` `LogMouseState` (0): logs the input state on every mouse click in gameplay, to help diagnose other mods.
+- **Chords enabled** (on): turns the chords on or off.
+- **Modifier waits for a number** (150 ms): how long Ctrl, Shift or Alt waits for a number key before the game gets the
+  press. Shorter feels snappier for running and sneaking; longer gives you more time to press the number.
+- **Notice when a slot changes** (on): a notice when you assign or clear a chord.
+- **Spell bar position** (bottom left): bottom left, bottom center, bottom right, top left, top center or top right.
 
-Log: `Documents/My Games/Skyrim Special Edition/SKSE/SpellChords.log`.
+**F1 menu** (SKSE Menu Framework) > **Spell Chords** > **Spell Bar**: everything else about the bar, applied live: size,
+spacing, opacity, how much the inactive rows dim, one row or all rows, when to show it, names under the icons, empty
+slots, and the exact position. "Save to SpellChords.ini" keeps the changes.
+
+Every setting is also in `Data/SKSE/Plugins/SpellChords.ini`, with comments. That's also where you'd pick keys other than
+Ctrl, Shift, Alt and 1-4.
 
 ## Compatibility
 
 - **Game 1.6.1170: tested.** The plugin hooks the game's input dispatch (the same place other input mods hook) and checks
   the code there first. If it doesn't find what it expects, it logs `chords disabled` and leaves input alone. It works
   together with other plugins hooked at the same spot.
-- No ESP and no scripts. The slots live in the SKSE co-save, so you can add or remove the mod at any time.
-- If another mod uses Ctrl, Shift or Alt + 1-4, the chord wins while this mod is enabled. Change the keys in `[Keys]`.
+- `SpellChords.esp` is a light plugin (ESL) that only needs Skyrim.esm. It holds the MCM and changes no vanilla records.
+- The chord slots live in the SKSE co-save, so you can add the mod to an existing save, or remove it, at any time.
+- If another mod uses Ctrl, Shift or Alt + 1-4, the chord wins while chords are enabled. Turn them off in the MCM, or pick
+  other keys in the ini.
 
 ## Credits and permissions
 
@@ -128,8 +131,15 @@ cmake --build build --config Release
 **Linux (cross-compile with clang-cl):** `linux/build.sh`. The script's header lists what it needs: LLVM 20, an
 [xwin](https://github.com/Jake-Shadle/xwin) MSVC sysroot, vcpkg, and Wine + llvm-mingw for DirectXTK's shader step.
 
-The release zip holds the DLL, `SpellChords.ini`, and in `SKSE/Plugins/SpellChords/` the weapon icons (`icons/*.svg`),
-`NOTICE.txt`, `COPYING.txt` and `THIRD-PARTY-LICENSES.txt`.
+**MCM plugin and scripts:** `plugin/build.sh "PATH/TO/Skyrim Special Edition/Data"` runs `plugin/build.cs`, a one-file
+[Mutagen](https://github.com/Mutagen-Modding/Mutagen) script (needs the .NET 10 SDK), and writes `data/SpellChords.esp`;
+only `Skyrim.esm` is read. Compile `data/Source/Scripts/*.psc` with the Creation Kit's Papyrus compiler into
+`data/Scripts/`; the imports need the vanilla script sources and SkyUI's `SKI_ConfigBase`, `SKI_QuestBase` and
+`SKI_ConfigManager` sources (SkyUI SDK), which are other authors' files and aren't included here.
+
+The release zip holds the contents of `data/` (`SpellChords.esp`, `Scripts/*.pex`, `Source/Scripts/*.psc`), plus in
+`SKSE/Plugins/` the DLL, `SpellChords.ini` and, in `SpellChords/`, the weapon icons (`icons/*.svg`), `NOTICE.txt`,
+`COPYING.txt` and `THIRD-PARTY-LICENSES.txt`.
 
 ## Technical details
 
@@ -140,6 +150,10 @@ The release zip holds the DLL, `SpellChords.ini`, and in `SKSE/Plugins/SpellChor
   the game maps to "Hotkey8" is read from the control map (8 by default).
 - **Spell bar:** an SKSE Menu Framework 3 HUD element (ImGui). Icons are Font Awesome 6 glyphs from SKSE Menu Framework's
   font plus our own weapon SVGs.
+- **MCM:** `SpellChords.esp` holds one start-game-enabled quest with `SpellChordsMCM` (extends SkyUI's `SKI_ConfigBase`) and
+  a forced "Player" alias with `SKI_PlayerLoadGameAlias`. The MCM keeps no values itself: it calls the DLL's Papyrus
+  natives (`SpellChords.psc`), which change the setting live and write it to the ini.
+- **Log:** `Documents/My Games/Skyrim Special Edition/SKSE/SpellChords.log`.
 
 ## License
 

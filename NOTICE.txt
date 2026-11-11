@@ -1,4 +1,4 @@
-Spell Chords 1.1.6
+Spell Chords 1.2.0
 Source: https://github.com/WhiteLionNeren/skyrim-spell-chords
 
 The source of Spell Chords is public domain (Unlicense). SpellChords.dll statically links CommonLibSSE-NG v8.3.0

@@ -62,6 +62,48 @@ namespace
 			g_set.holdSecs, g_set.mods[0], g_set.mods[1], g_set.mods[2], g_set.nums[0], g_set.nums[3]);
 	}
 
+	void SaveGeneral()  // [General] values the MCM changes
+	{
+		auto path = IniPath();
+		auto put = [&](const char* key, const std::string& v) { WritePrivateProfileStringA("General", key, v.c_str(), path.c_str()); };
+		put("Enabled", g_set.enabled ? "1" : "0");
+		put("HoldMs", std::to_string(static_cast<int>(std::lround(g_set.holdSecs * 1000.0f))));
+		put("Notify", g_set.notify ? "1" : "0");
+	}
+
+	// ---------- Papyrus natives for the MCM (script SpellChords, all global) ----------
+	bool GetChordsEnabled(RE::StaticFunctionTag*) { return g_set.enabled; }
+	void SetChordsEnabled(RE::StaticFunctionTag*, bool a_on)
+	{
+		g_set.enabled = a_on;
+		SaveGeneral();
+		SKSE::log::info("MCM: chords {}", a_on ? "on" : "off");
+	}
+	std::int32_t GetHoldMs(RE::StaticFunctionTag*) { return static_cast<std::int32_t>(std::lround(g_set.holdSecs * 1000.0f)); }
+	void SetHoldMs(RE::StaticFunctionTag*, std::int32_t a_ms)
+	{
+		g_set.holdSecs = std::clamp(a_ms, 50, 1000) / 1000.0f;
+		SaveGeneral();
+		SKSE::log::info("MCM: hold {} s", g_set.holdSecs);
+	}
+	bool GetNotify(RE::StaticFunctionTag*) { return g_set.notify; }
+	void SetNotify(RE::StaticFunctionTag*, bool a_on)
+	{
+		g_set.notify = a_on;
+		SaveGeneral();
+	}
+
+	bool RegisterPapyrus(RE::BSScript::IVirtualMachine* a_vm)
+	{
+		a_vm->RegisterFunction("GetChordsEnabled", "SpellChords", GetChordsEnabled, true);
+		a_vm->RegisterFunction("SetChordsEnabled", "SpellChords", SetChordsEnabled);
+		a_vm->RegisterFunction("GetHoldMs", "SpellChords", GetHoldMs, true);
+		a_vm->RegisterFunction("SetHoldMs", "SpellChords", SetHoldMs);
+		a_vm->RegisterFunction("GetNotify", "SpellChords", GetNotify, true);
+		a_vm->RegisterFunction("SetNotify", "SpellChords", SetNotify);
+		return SpellBar::RegisterPapyrus(a_vm);
+	}
+
 	int ModIndex(std::uint32_t key)
 	{
 		for (int i = 0; i < 3; i++)
@@ -517,7 +559,7 @@ std::string SpellChords::DataPath(std::string_view a_rel)
 
 extern "C" __declspec(dllexport) constinit auto SKSEPlugin_Version = []() {
 	SKSE::PluginVersionData v;
-	v.PluginVersion(REL::Version(1, 1, 6, 0));
+	v.PluginVersion(REL::Version(1, 2, 0, 0));
 	v.PluginName("SpellChords");
 	v.AuthorName("WhiteLionNeren & Claude");
 	v.UsesAddressLibrary();
@@ -540,7 +582,7 @@ extern "C" __declspec(dllexport) bool SKSEPlugin_Load(const SKSE::LoadInterface*
 	g_inputTarget = REL::Relocation<std::uintptr_t>{ RELOCATION_ID(67315, 68617), REL::Relocate(0x7B, 0x7B, 0x81) };
 	SpellChords::DataPath("");
 	SetupLog();
-	SKSE::log::info("Spell Chords 1.1.6");
+	SKSE::log::info("Spell Chords 1.2.0");
 	LoadSettings();
 	SKSE::AllocTrampoline(32);
 	auto ser = SKSE::GetSerializationInterface();
@@ -548,6 +590,7 @@ extern "C" __declspec(dllexport) bool SKSEPlugin_Load(const SKSE::LoadInterface*
 	ser->SetSaveCallback(OnSave);
 	ser->SetLoadCallback(OnLoad);
 	ser->SetRevertCallback(OnRevert);
+	SKSE::GetPapyrusInterface()->Register(RegisterPapyrus);
 	SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* m) {
 		if (m->type == SKSE::MessagingInterface::kDataLoaded) {
 			InstallHook();

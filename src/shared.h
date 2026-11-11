@@ -15,4 +15,5 @@ namespace SpellChords
 namespace SpellBar
 {
 	void Install();  // registers the HUD element and the F1 settings page (needs SKSE Menu Framework 3)
+	bool RegisterPapyrus(RE::BSScript::IVirtualMachine* a_vm);  // natives of script SpellChords, for the MCM
 }

@@ -6,7 +6,8 @@
 // the key, a stack count for consumables, a red wash when a spell costs more magicka than you have, a dark sweep + seconds
 // while the shout cooldown runs, and a gold frame on what's equipped (either hand, or the selected power/shout).
 // Hidden in menus (except Favorites, where you assign chords), while the HUD is hidden, and per ShowWhen.
-// Settings: [Bar] in SpellChords.ini, editable live in the F1 menu (Spell Chords > Spell Bar), saved back to the ini.
+// Settings: [Bar] in SpellChords.ini, editable live in the F1 menu (Spell Chords > Spell Bar), saved back to the ini. The
+// MCM (SpellChordsMCM.psc) picks one of the position presets through the Papyrus natives at the end of this file.
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
 
@@ -31,9 +32,10 @@ namespace
 		int showWhen = 0;        // 0 always, 1 weapon/magic drawn or in combat, 2 in combat only
 		float iconSize = 46.0f;  // px at 1080p
 		float gap = 5.0f;
-		int anchor = 1;          // which point of the bar PosX places: 0 left edge, 1 centre, 2 right edge
-		float posX = 0.5f;       // that point, fraction of screen width
-		float posY = 0.86f;      // bar bottom, fraction of screen height
+		int anchor = 0;          // which point of the bar PosX places: 0 left edge, 1 centre, 2 right edge
+		float posX = 0.015f;     // that point, fraction of screen width
+		int anchorY = 0;         // 0: PosY is the bar's bottom edge, rows stack upward; 1: PosY is its top edge, rows stack downward
+		float posY = 0.97f;      // that edge, fraction of screen height
 		float opacity = 0.9f;
 		float dimInactive = 0.45f;
 		bool showNames = false;
@@ -62,9 +64,10 @@ namespace
 		g_bar.showWhen = GetI("ShowWhen", 0);
 		g_bar.iconSize = GetF("IconSize", 46.0f);
 		g_bar.gap = GetF("Gap", 5.0f);
-		g_bar.anchor = std::clamp(GetI("Anchor", 1), 0, 2);
-		g_bar.posX = GetF("PosX", 0.5f);
-		g_bar.posY = GetF("PosY", 0.86f);
+		g_bar.anchor = std::clamp(GetI("Anchor", 0), 0, 2);
+		g_bar.posX = GetF("PosX", 0.015f);
+		g_bar.anchorY = std::clamp(GetI("AnchorY", 0), 0, 1);
+		g_bar.posY = GetF("PosY", 0.97f);
 		g_bar.opacity = GetF("Opacity", 0.9f);
 		g_bar.dimInactive = GetF("DimInactive", 0.45f);
 		g_bar.showNames = GetI("ShowNames", 0) != 0;
@@ -82,6 +85,7 @@ namespace
 		put("Gap", fmt::format("{:.0f}", g_bar.gap));
 		put("Anchor", std::to_string(g_bar.anchor));
 		put("PosX", fmt::format("{:.3f}", g_bar.posX));
+		put("AnchorY", std::to_string(g_bar.anchorY));
 		put("PosY", fmt::format("{:.3f}", g_bar.posY));
 		put("Opacity", fmt::format("{:.2f}", g_bar.opacity));
 		put("DimInactive", fmt::format("{:.2f}", g_bar.dimInactive));
@@ -90,6 +94,50 @@ namespace
 		put("HideEmptyRows", g_bar.hideEmptyRows ? "1" : "0");
 		SKSE::log::info("spell bar settings saved");
 	}
+
+	// ---------- position presets (MCM and F1 page) ----------
+	struct Preset
+	{
+		const char* name;
+		int anchor;
+		float posX;
+		int anchorY;
+		float posY;
+	};
+	// Bottom center sits above the vanilla health/magicka/stamina bars, top center below the compass.
+	constexpr Preset kPresets[] = {
+		{ "Bottom left", 0, 0.015f, 0, 0.97f },
+		{ "Bottom center", 1, 0.5f, 0, 0.86f },
+		{ "Bottom right", 2, 0.985f, 0, 0.97f },
+		{ "Top left", 0, 0.015f, 1, 0.03f },
+		{ "Top center", 1, 0.5f, 1, 0.09f },
+		{ "Top right", 2, 0.985f, 1, 0.03f },
+	};
+	constexpr int kPresetCount = static_cast<int>(std::size(kPresets));
+
+	int CurrentPreset()  // index into kPresets, or -1 when the position was set by hand (F1 sliders / ini)
+	{
+		for (int i = 0; i < kPresetCount; i++) {
+			auto& p = kPresets[i];
+			if (g_bar.anchor == p.anchor && g_bar.anchorY == p.anchorY && std::abs(g_bar.posX - p.posX) < 0.0015f &&
+				std::abs(g_bar.posY - p.posY) < 0.0015f)
+				return i;
+		}
+		return -1;
+	}
+
+	void ApplyPreset(int a_index)
+	{
+		if (a_index < 0 || a_index >= kPresetCount) return;
+		auto& p = kPresets[a_index];
+		g_bar.anchor = p.anchor;
+		g_bar.posX = p.posX;
+		g_bar.anchorY = p.anchorY;
+		g_bar.posY = p.posY;
+		SKSE::log::info("spell bar position: {}", p.name);
+	}
+
+	bool g_barAvailable = false;  // SKSE Menu Framework found and the HUD element registered
 
 	// ---------- icons ----------
 	struct Icon
@@ -364,7 +412,7 @@ namespace
 		float rowH = sz + gap + nameH;
 		float totalW = labelW + 4 * sz + 3 * gap;
 		float x0 = io.DisplaySize.x * g_bar.posX - totalW * 0.5f * static_cast<float>(g_bar.anchor);
-		float yBottom = io.DisplaySize.y * g_bar.posY;
+		float yEdge = io.DisplaySize.y * g_bar.posY;
 
 		auto dl = GetForegroundDrawList();
 		auto font = GetFont();
@@ -374,7 +422,8 @@ namespace
 
 		for (std::size_t i = 0; i < rows.size(); i++) {
 			int r = rows[i];
-			float y = yBottom - (i + 1) * rowH;
+			// bottom anchor: the 1-4 row at the bottom, modifier rows above; top anchor: the 1-4 row at the top, rows below
+			float y = g_bar.anchorY == 1 ? yEdge + i * rowH : yEdge - (i + 1) * rowH;
 			bool active = g_bar.layout == 1 || (held < 0 ? r == 0 : r == held + 1);
 			float a = g_alpha * g_bar.opacity * (active ? 1.0f : g_bar.dimInactive);
 			auto col = [&](ImU32 c, float mul = 1.0f) {
@@ -454,10 +503,21 @@ namespace
 		changed |= Combo("Show when", &g_bar.showWhen, when, 3, -1);
 		changed |= SliderFloat("Icon size", &g_bar.iconSize, 24.0f, 96.0f, "%.0f px", 0);
 		changed |= SliderFloat("Gap", &g_bar.gap, 0.0f, 20.0f, "%.0f px", 0);
+		const char* presets[kPresetCount + 1];
+		for (int i = 0; i < kPresetCount; i++) presets[i] = kPresets[i].name;
+		presets[kPresetCount] = "Custom (sliders below)";
+		int preset = CurrentPreset();
+		int shown = preset < 0 ? kPresetCount : preset;
+		if (Combo("Position", &shown, presets, kPresetCount + 1, -1) && shown < kPresetCount) {
+			ApplyPreset(shown);
+			changed = true;
+		}
 		const char* anchors[] = { "Left edge", "Centre", "Right edge" };
 		changed |= Combo("Position X places the bar's", &g_bar.anchor, anchors, 3, -1);
 		changed |= SliderFloat("Position X", &g_bar.posX, 0.0f, 1.0f, "%.3f", 0);
-		changed |= SliderFloat("Position Y (bottom)", &g_bar.posY, 0.1f, 1.0f, "%.3f", 0);
+		const char* anchorsY[] = { "Bottom edge (rows stack upward)", "Top edge (rows stack downward)" };
+		changed |= Combo("Position Y places the bar's", &g_bar.anchorY, anchorsY, 2, -1);
+		changed |= SliderFloat("Position Y", &g_bar.posY, 0.0f, 1.0f, "%.3f", 0);
 		changed |= SliderFloat("Opacity", &g_bar.opacity, 0.1f, 1.0f, "%.2f", 0);
 		changed |= SliderFloat("Inactive rows", &g_bar.dimInactive, 0.0f, 1.0f, "%.2f", 0);
 		changed |= Checkbox("Show names under icons", &g_bar.showNames);
@@ -483,5 +543,31 @@ void SpellBar::Install()
 	SKSEMenuFramework::SetSection("Spell Chords");
 	SKSEMenuFramework::AddSectionItem("Spell Bar", SettingsPage);
 	SKSEMenuFramework::AddHudElement(Draw);
+	g_barAvailable = true;
 	SKSE::log::info("spell bar: HUD element registered (enabled {}, layout {}, show when {})", g_bar.enabled, g_bar.layout, g_bar.showWhen);
+}
+
+// ---------- Papyrus natives for the MCM (script SpellChords, all global) ----------
+namespace
+{
+	std::int32_t GetBarPosition(RE::StaticFunctionTag*) { return CurrentPreset(); }
+
+	void SetBarPosition(RE::StaticFunctionTag*, std::int32_t a_index)
+	{
+		if (a_index < 0 || a_index >= kPresetCount) return;
+		ApplyPreset(a_index);
+		g_nextRefresh = {};
+		SaveBarSettings();
+	}
+
+	bool BarAvailable(RE::StaticFunctionTag*) { return g_barAvailable; }
+}
+
+bool SpellBar::RegisterPapyrus(RE::BSScript::IVirtualMachine* a_vm)
+{
+	a_vm->RegisterFunction("GetBarPosition", "SpellChords", GetBarPosition, true);
+	a_vm->RegisterFunction("SetBarPosition", "SpellChords", SetBarPosition);
+	a_vm->RegisterFunction("BarAvailable", "SpellChords", BarAvailable, true);
+	SKSE::log::info("Papyrus functions registered (SpellChords.GetBarPosition/SetBarPosition/BarAvailable)");
+	return true;
 }
