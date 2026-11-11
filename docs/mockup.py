@@ -5,7 +5,7 @@ Usage: python3 docs/mockup.py FA_SOLID_TTF [OUT.png]
 FA_SOLID_TTF = Font Awesome 6 Free Solid (fa-solid-900.ttf, the font SKSE Menu Framework uses for the bar's icons). Needs Pillow.
 
 Shown state: Ctrl is held (its row lit, the others dimmed); Shift+1 is a spell you can't afford (red wash); Ctrl+4 is a
-shout cooling down (23 s); 1-3 is the equipped sword (gold frame); 1-4 is a health potion you carry 12 of.
+shout cooling down (23 s); 1-3 is the equipped sword (gold frame); 1-4 is a health potion you carry 12 of (shown "x12").
 """
 import math
 import sys
@@ -114,7 +114,7 @@ def main():
                     d.text((p0[0] + (sz - (bb[2] - bb[0])) / 2 - bb[0], p0[1] + (sz - (bb[3] - bb[1])) / 2 - bb[1]), t,
                            font=tf, fill=rgba((255, 255, 255), 255 * a))
                 if "count" in st:
-                    t = str(st["count"])
+                    t = "x" + str(st["count"])
                     tf = text(fs * 0.85)
                     tw = d.textlength(t, font=tf)
                     d.text((p1[0] - tw - 3 * s, p1[1] - fs * 0.85 - 4 * s), t, font=tf, fill=rgba((255, 255, 255), 255 * a))

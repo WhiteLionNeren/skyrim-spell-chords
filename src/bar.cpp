@@ -471,7 +471,7 @@ namespace
 					if (s.count == 0)
 						ImDrawListManager::AddRectFilled(dl, p0, p1, col(IM_COL32(0, 0, 0, 140)), rounding, 0);
 					if (s.count >= 0) {
-						auto t = std::to_string(s.count);
+						auto t = "x" + std::to_string(s.count);  // "x12"
 						ImVec2 ts = CalcTextSize(t.c_str(), nullptr, false, -1.0f);
 						ImDrawListManager::AddText(dl, font, fs * scale * 0.85f, ImVec2(p1.x - ts.x * 0.85f * scale - 3 * scale, p1.y - fs * scale * 0.85f - 2 * scale), col(IM_COL32(255, 255, 255, 255)), t.c_str());
 					}

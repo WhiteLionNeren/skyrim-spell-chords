@@ -7,7 +7,7 @@ shows what every hotkey does. The vanilla hotkeys 1-8 keep working as before.
 
 In the picture (a mock-up drawn with the bar's own layout and colours), Ctrl is held, so the Ctrl row is lit and the
 others are dimmed. Shift+1 has a red wash: not enough magicka for that spell right now. Ctrl+4 is a shout on cooldown,
-with 23 seconds left. The gold frame on 3 is the sword you have equipped. The 12 on 4 is how many of that potion you carry.
+with 23 seconds left. The gold frame on 3 is the sword you have equipped. The x12 on 4 is how many of that potion you carry.
 
 ## What it does
 
@@ -49,7 +49,7 @@ still work and there is simply no bar.
   shields, armour, torches, ingredients, soul gems, books and ammo.
 - **States:**
   - the key number in the top-left corner;
-  - for potions, poisons, food, scrolls, ingredients, soul gems, arrows and torches: how many you carry, in the
+  - for potions, poisons, food, scrolls, ingredients, soul gems, arrows and torches: how many you carry ("x12"), in the
     bottom-right corner (the slot greys out at 0);
   - a red wash on a spell that costs more magicka than you have right now;
   - while your shout recharges, the shout slots darken and count down the seconds left;
