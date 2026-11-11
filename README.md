@@ -15,6 +15,8 @@ pressing again fills the other hand, a potion is drunk, and so on.
 
 - **Assign:** open the Favorites menu (Q), highlight an entry and press the chord, for example **Ctrl+1**. A notice confirms
   it. The same chord on the same entry clears the slot. The entry's vanilla hotkey isn't changed at the same time.
+- **Chords aren't shown in the Favorites menu:** it only shows the vanilla hotkeys 1-8 next to entries. To see what's on
+  each chord, use the spell bar (below).
 - **Use:** press the chord in game.
 - Slots are saved per save game. Items have to stay favorited and in your inventory; spells and shouts just have to be known.
 
