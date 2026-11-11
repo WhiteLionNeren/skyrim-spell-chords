@@ -5,7 +5,9 @@ shows what every hotkey does. The vanilla hotkeys 1-8 keep working as before.
 
 ![Spell bar mock-up](docs/spellbar-mockup.png)
 
-(The picture is a mock-up drawn with the bar's layout rules, not an in-game screenshot.)
+In the picture (a mock-up drawn with the bar's own layout and colours), Ctrl is held, so the Ctrl row is lit and the
+others are dimmed. Shift+1 has a red wash: not enough magicka for that spell right now. Ctrl+4 is a shout on cooldown,
+with 23 seconds left. The gold frame on 3 is the sword you have equipped. The 12 on 4 is how many of that potion you carry.
 
 ## What it does
 
@@ -45,8 +47,13 @@ still work and there is simply no bar.
 - **Icons** by kind, tinted: spells by school and element (fire, frost, shock, healing, ward, light, illusion,
   conjuration, bound weapons), powers, shouts, scrolls, potions by what they restore, poisons, food, weapons by type,
   shields, armour, torches, ingredients, soul gems, books and ammo.
-- **States:** the key number in the corner; a count for consumables (greyed at 0); a red wash on spells that cost more
-  magicka than you have; the shout cooldown counting down; a gold frame on what's equipped.
+- **States:**
+  - the key number in the top-left corner;
+  - for potions, poisons, food, scrolls, ingredients, soul gems, arrows and torches: how many you carry, in the
+    bottom-right corner (the slot greys out at 0);
+  - a red wash on a spell that costs more magicka than you have right now;
+  - while your shout recharges, the shout slots darken and count down the seconds left;
+  - a gold frame on what you have equipped.
 - **When it shows:** in gameplay and in the Favorites menu. Hidden in other menus, in dialogue, while an SKSE Menu Framework
   window is open, and when the HUD is hidden. It can also show only with weapons drawn or in combat.
 - **Position:** bottom left by default. Pick another in the MCM (see Settings): bottom center, bottom right, top left, top
